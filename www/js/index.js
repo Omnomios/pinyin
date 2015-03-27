@@ -1,28 +1,13 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 var app = {
+
+    /*rootPath: "",*/
+    rootPath: "/android_asset/www/",
 
     wordAudio:{},
     pinyinTable:{},
 
-    consonate:"t",
-    vowel:"a",
+    consonate:"",
+    vowel:"",
     tone:1,
 
     timer: {hintfade:0},
@@ -30,11 +15,17 @@ var app = {
     // Application Constructor
     initialize: function() {
         var parentThis = this;
-
         this.bindEvents();
+    },
 
+    bindEvents: function() {
+        document.addEventListener('deviceready', this.onDeviceReady, false);
+    },
+
+    onDeviceReady: function() {
+        var parentThis = app;
         $.ajax({
-            url:"pinyinTable.json",
+            url: parentThis.rootPath + "pinyinTable.json",
             type: "GET",
             dataType: "json"
         }).done(function(result){
@@ -42,42 +33,14 @@ var app = {
             parentThis.nextWord();
         });
 
-        $("div.slide").click(this.clickRate);
+        $("div.slide").click(app.clickRate);
         $("div.guide").click(function(){
             clearTimeout(parentThis.timer.hintfade);
             $(this).html("");
             $(this).css("opacity",0);
             $(this).hide();
         });
-
-        setupScale(360);
     },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
-
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        console.log('Received Event: ' + id);
-    },
-
 
     pickRandomProperty:function(obj) {
         var result;
@@ -85,14 +48,12 @@ var app = {
         for (var prop in obj)
             if (Math.random() < 1/++count)
                 result = prop;
-
         return result;
     },
 
     nextWord: function(){
         this.consonate = this.pickRandomProperty(this.pinyinTable.consonate);
         this.vowel = this.pickRandomProperty(this.pinyinTable.consonate[this.consonate].words);
-
         this.render();
     },
 
@@ -127,7 +88,42 @@ var app = {
             width = $(this).width();
         var factor = (event.pageX-posX)/width;
 
+        app.rate(factor-0.5);
         app.nextWord();
+    },
+
+    rate: function(factor)
+    {
+        var consonateJSON = window.localStorage.getItem("consonant");
+        var vowelJSON      = window.localStorage.getItem("vowel");
+
+        if(consonateJSON != null)
+            var consonateObject = JSON.parse(consonateJSON);
+        else
+        {
+            var consonateObject = {};
+            for( var i in this.pinyinTable.consonate )
+                consonateObject[i] = {f:0, t:Date.now()};
+        }
+
+        if(vowelJSON != null)
+            var vowelObject = JSON.parse(vowelJSON);
+        else
+        {
+            //buildbase
+            var vowelObject = {};
+            for( var i in this.pinyinTable.vowels )
+                vowelObject[i] = {f:0, t:Date.now()};
+        }
+
+        consonateObject[this.consonate].f += factor;
+        consonateObject[this.consonate].t += Date.now();
+
+        vowelObject[this.vowel].f += factor;
+        vowelObject[this.vowel].t += Date.now();
+
+        window.localStorage.setItem("consonant",JSON.stringify(consonateObject));
+        window.localStorage.setItem("vowel",    JSON.stringify(vowelObject));
     },
 
     changeTone: function(tone){
@@ -136,14 +132,30 @@ var app = {
     },
 
     render: function(){
+        var soundword = this.pinyinTable.consonate[this.consonate].words[this.vowel].replace("ü","v");
+        var audiopath = this.rootPath+"sound/"+this.consonate.replace(" ","none")+"/"+this.vowel.replace("ü","v")+"/"+soundword+this.tone+".ogg";
 
-        var soundword = this.pinyinTable.consonate[this.consonate].words[this.vowel];
-        this.wordAudio = new Audio("sound/"+this.consonate.replace(" ","none")+"/"+this.vowel+"/"+soundword+this.tone+".mp3", function(){});
-
-        //Autoload file.
-        this.wordAudio.addEventListener("ended", function()
-        {
+        this.wordAudio = new Media(audiopath, function(){
             $("div.word").removeClass("pulse");
+        }, function(error){
+            switch(error.code)
+            {
+                case MediaError.MEDIA_ERR_ABORTED:
+                    alert("Error playing audio: aborted");
+                break;
+
+                case MediaError.MEDIA_ERR_NETWORK:
+                    alert("Error playing audio: network failure.");
+                break;
+
+                case MediaError.MEDIA_ERR_DECODE:
+                    alert("Error playing audio: could not decode.");
+                break;
+
+                case MediaError.MEDIA_ERR_NONE_SUPPORTED:
+                    alert("Error playing audio: no audio device found.");
+                break;
+            }
         });
 
         $("div.guide").html("");
@@ -154,7 +166,7 @@ var app = {
         $("div.vowel").html(this.vowel);
 
         var word = this.addtone(soundword, this.tone);
-
+        $("div.word").removeClass("pulse");
         $("div.word").html(word);
     },
 
@@ -197,7 +209,6 @@ var app = {
                 if(char.match(/[aeiou]/gi).length == 1)
                 {
                     var tonepoint = vowels.indexOf(char);
-
                     word = setCharAt(word,i-1,tones[tone-1][tonepoint]);
                     return word;
                 }
@@ -207,30 +218,3 @@ var app = {
         return word;
     }
 };
-
-
-function setupScale (minWidth) {
-    var viewWidth = Math.max(document.documentElement.clientWidth, window.innerWidth);
-    var viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
-    var portWidth = Math.min(viewWidth, viewHeight);
-    var landWidth = Math.max(viewWidth, viewHeight);
-    var fixScale = function () {
-        if (Math.abs(window.orientation) != 90) {
-            // portrait
-            document.body.style.zoom = portWidth / minWidth;
-        } else if (landWidth < minWidth) {
-            // landscape, but < minWidth
-            document.body.style.zoom = landWidth / minWidth;
-        } else {
-            // landscape >= minWidth. Turn off zoom.
-            // This will make things "larger" in landscape.
-            document.body.style.zoom = 1;
-        }
-    };
-
-    if (gPortWidth >= minWidth) {
-        return;     // device is greater than minWidth even in portrait.
-    }
-    fixScale();                             // fix the current scale.
-    window.onorientationchange = fixScale;  // and when orientation is changed
-}
