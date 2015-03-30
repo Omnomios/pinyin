@@ -68,7 +68,7 @@ body
 {
     display: inline-block;
     width:48%;
-    color: white;
+    color: #444;
     font-size: 1.5em;
     text-align: center;
     line-height: 1.5em;
@@ -86,14 +86,10 @@ body
 
 .word
 {
-    color: white;
+    color: #444;
     font-size: 2.5em;
     text-align: center;
     line-height: 2.5em;
-
-    width: 70%;
-    margin: 0 auto;
-    background-color: #444;
     -webkit-transition: background-color 1s ease-in-out;
 }
 
@@ -177,10 +173,11 @@ div.controls ul li button
 
 div.display
 {
-    width:90%;
-    padding-top: 2em;
+    width:100%;    
+    padding: 2em;
     margin: 0 auto;
     display: block;
+    background-color: white;
 }
 
 div.controls
