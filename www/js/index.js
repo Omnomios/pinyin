@@ -146,7 +146,7 @@ var app = {
             this.wordAudio.release();
 
         this.wordAudio = new Media(audiopath, function(){
-            $("div.word").removeClass("pulse");
+            $("div.word > div.sound").removeClass("pulse");
         }, function(error){
             switch(error.code)
             {
