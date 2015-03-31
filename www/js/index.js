@@ -52,13 +52,19 @@ var app = {
     },
 
     nextWord: function(){
+
+        //Find Consonaote
         this.consonate = this.pickRandomProperty(this.pinyinTable.consonate);
+
+        //Find Vowel
         this.vowel = this.pickRandomProperty(this.pinyinTable.consonate[this.consonate].words);
+
+        //Update screen
         this.render();
     },
 
     wordSound: function(){
-        $("div.word").addClass("pulse");
+        $("div.word > div.sound").addClass("pulse");
         this.wordAudio.play();
     },
 
@@ -132,8 +138,12 @@ var app = {
     },
 
     render: function(){
-        var soundword = this.pinyinTable.consonate[this.consonate].words[this.vowel].replace("ü","v");
+        var displayword = this.pinyinTable.consonate[this.consonate].words[this.vowel];
+        var soundword = displayword.replace("ü","v");
         var audiopath = this.rootPath+"sound/"+this.consonate.replace(" ","none")+"/"+this.vowel.replace("ü","v")+"/"+soundword+this.tone+".ogg";
+
+        if(typeof this.wordAudio.release == "function")
+            this.wordAudio.release();
 
         this.wordAudio = new Media(audiopath, function(){
             $("div.word").removeClass("pulse");
@@ -162,12 +172,12 @@ var app = {
         $("div.guide").css("opacity", 0);
         $("div.guide").hide();
 
-        $("div.consonate").html(this.consonate);
-        $("div.vowel").html(this.vowel);
+        $("div.consonate > span").html(this.consonate);
+        $("div.vowel > span").html(this.vowel);
 
-        var word = this.addtone(soundword, this.tone);
-        $("div.word").removeClass("pulse");
-        $("div.word").html(word);
+        var word = this.addtone(displayword, this.tone);
+        $("div.word > div.sound").removeClass("pulse");
+        $("div.word > span").html(word);
     },
 
     addtone: function(word, tone){

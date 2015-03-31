@@ -10,37 +10,40 @@
         <title>Flash cards</title>
     </head>
     <body>
-
         <div class="app">
             <div class="display">
-                <div>
-                    <div class="consonate" onClick="app.consonateHint();">
-                        -
-                    </div>
-                    <div class="vowel" onClick="app.vowelHint();">
-                        -
-                    </div>
+                <div class="guideAnchor">
+                    <div class="guide"></div>
                 </div>
                 <div class="word" onClick="app.wordSound();">
-                    -
+                    <div class="sound"><img src="img/sound-icon.png" width="32px"></div>
+                    <span>-</span>
+                </div>
+                <div>
+                    <div class="consonate" onClick="app.consonateHint();">
+                        <label>Initial</label>
+                        <span>-</span>
+                    </div>
+                    <div class="vowel" onClick="app.vowelHint();">
+                        <label>Finals</label>
+                        <span>-</span>
+                    </div>
                 </div>
             </div>
             <div class="controls">
-                <div class="guideAnchor">
-                    <div class="guide">Here is a lump of text explaining the prenunciation</div>
-                </div>
-                <div class="slide inset">
+                <label>Are you correct?</label>
+                <div class="slide">
                     <div class="label n">No</div>
                     <div class="label y">Yes</div>
                 </div>
-
+                <div style="height: 1em;"></div>
+                <label>Change tone:</label>
                 <ul>
                     <li><button type="button" onClick="app.changeTone(1)">1</button></li>
                     <li><button type="button" onClick="app.changeTone(2)">2</button></li>
                     <li><button type="button" onClick="app.changeTone(3)">3</button></li>
                     <li><button type="button" onClick="app.changeTone(4)">4</button></li>
                 </ul>
-
             </div>
         </div>
 
