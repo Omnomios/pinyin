@@ -1,10 +1,8 @@
 var app = {
-
     /*rootPath: "",*/
     rootPath: "/android_asset/www/",
 
     wordAudio:{},
-    pinyinTable:{},
 
     consonate:"",
     vowel:"",
@@ -24,14 +22,8 @@ var app = {
 
     onDeviceReady: function() {
         var parentThis = app;
-        $.ajax({
-            url: parentThis.rootPath + "pinyinTable.json",
-            type: "GET",
-            dataType: "json"
-        }).done(function(result){
-            parentThis.pinyinTable = result;
-            parentThis.nextWord();
-        });
+
+        parentThis.nextWord();
 
         $("div.slide").click(app.clickRate);
         $("div.guide").click(function(){
@@ -42,25 +34,66 @@ var app = {
         });
     },
 
-    pickRandomProperty:function(obj) {
-        var result;
-        var count = 0;
-        for (var prop in obj)
-            if (Math.random() < 1/++count)
-                result = prop;
-        return result;
-    },
-
     nextWord: function(){
 
-        //Find Consonaote
-        this.consonate = this.pickRandomProperty(this.pinyinTable.consonate);
-
-        //Find Vowel
-        this.vowel = this.pickRandomProperty(this.pinyinTable.consonate[this.consonate].words);
+        this.consonate = this.pickConsonate()
+        this.vowel = pickRandomProperty(pinyinTable.consonate[this.consonate].words);
 
         //Update screen
         this.render();
+    },
+
+    pickConsonate: function()
+    {
+        var consonateObject = this.consonateRatings.get();
+        var consonateByFactor = {};
+        for(var i in consonateObject)
+        {
+            if(typeof consonateByFactor[consonateObject[i].f] == "undefined")
+                consonateByFactor[consonateObject[i].f] = Array();
+            consonateByFactor[consonateObject[i].f].push(i);
+        }
+        consonateByFactor = sortObjectByKey(consonateByFactor);
+
+        var minAge = 86400000;
+
+        //Pick a consonate
+        while(true)
+        {
+            for(var i in consonateByFactor)
+            {
+                for(var ci in consonateByFactor[i])
+                {
+                    var candidate = consonateByFactor[i][ci];
+
+                    if(consonateObject[candidate].t + minAge < Date.now())
+                    {
+                        return candidate;
+                    }
+                }
+            }
+
+            if(minAge < 60000)
+                break;
+
+            minAge *= 0.5;
+        }
+
+        //Still nothing? Pick one at random.
+        return pickRandomProperty(pinyinTable.consonate);
+    },
+
+    pickVowel: function(consonate)
+    {
+        var vowelObject     = this.vowelRatings.get();
+        var vowelByFactor     = {};
+        for(var i in vowelObject)
+        {
+            if(typeof vowelByFactor[vowelObject[i].f] == "undefined")
+                vowelByFactor[vowelObject[i].f] = Array();
+            vowelByFactor[vowelObject[i].f] = i;
+        }
+        vowelByFactor = sortObjectByKey(vowelByFactor);
     },
 
     wordSound: function(){
@@ -69,7 +102,7 @@ var app = {
     },
 
     consonateHint: function(){
-        $("div.guide").html(this.pinyinTable.consonate[this.consonate].guide);
+        $("div.guide").html(pinyinTable.consonate[this.consonate].guide);
         $("div.guide").css("opacity", 1);
         $("div.guide").show();
         clearTimeout(this.timer.hintfade);
@@ -79,7 +112,7 @@ var app = {
     },
 
     vowelHint: function(){
-        $("div.guide").html(this.pinyinTable.vowels[this.vowel]);
+        $("div.guide").html(pinyinTable.vowels[this.vowel]);
         $("div.guide").css("opacity", 1);
         $("div.guide").show();
         clearTimeout(this.timer.hintfade);
@@ -94,42 +127,76 @@ var app = {
             width = $(this).width();
         var factor = (event.pageX-posX)/width;
 
+        $("div.ratemark label").html(Math.round((factor*6)-3,0));
+        $("div.ratemark").addClass("float");
+        $("div.ratemark").css("left", $(this).width()*factor);
+        setTimeout(function(){$("div.ratemark").removeClass("float")}, 1000);
+
         app.rate(factor-0.5);
         app.nextWord();
     },
 
+    consonateRatings:
+    {
+        get:function()
+        {
+            var consonateJSON = window.localStorage.getItem("consonant");
+            if(consonateJSON != null)
+                var consonateObject = JSON.parse(consonateJSON);
+            else
+            {
+                var consonateObject = {};
+                for( var i in pinyinTable.consonate )
+                {
+                    consonateObject[i] = {f:0.5, t: Date.now()};
+                }
+            }
+            return consonateObject;
+        },
+
+        set:function(consonateObject)
+        {
+            window.localStorage.setItem("consonant", JSON.stringify(consonateObject));
+        }
+    },
+
+    vowelRatings:
+    {
+        get:function()
+        {
+            var vowelJSON = window.localStorage.getItem("vowel");
+
+            if(vowelJSON != null)
+                var vowelObject = JSON.parse(vowelJSON);
+            else
+            {
+                var vowelObject = {};
+                for( var i in pinyinTable.vowels )
+                    vowelObject[i] = {f:0.5, t: Date.now()};
+            }
+            return vowelObject;
+        },
+        set:function(vowelObject)
+        {
+            window.localStorage.setItem("vowel", JSON.stringify(vowelObject));
+        }
+    },
+
     rate: function(factor)
     {
-        var consonateJSON = window.localStorage.getItem("consonant");
-        var vowelJSON      = window.localStorage.getItem("vowel");
-
-        if(consonateJSON != null)
-            var consonateObject = JSON.parse(consonateJSON);
-        else
-        {
-            var consonateObject = {};
-            for( var i in this.pinyinTable.consonate )
-                consonateObject[i] = {f:0, t:Date.now()};
-        }
-
-        if(vowelJSON != null)
-            var vowelObject = JSON.parse(vowelJSON);
-        else
-        {
-            //buildbase
-            var vowelObject = {};
-            for( var i in this.pinyinTable.vowels )
-                vowelObject[i] = {f:0, t:Date.now()};
-        }
+        var consonateObject = this.consonateRatings.get();
+        var vowelObject     = this.vowelRatings.get();
 
         consonateObject[this.consonate].f += factor;
-        consonateObject[this.consonate].t += Date.now();
+        consonateObject[this.consonate].t = Date.now();
+        consonateObject[this.consonate].f.clamp(0, 1);
 
         vowelObject[this.vowel].f += factor;
-        vowelObject[this.vowel].t += Date.now();
+        vowelObject[this.vowel].t = Date.now();
+        vowelObject[this.vowel].f.clamp(0, 1);
 
-        window.localStorage.setItem("consonant",JSON.stringify(consonateObject));
-        window.localStorage.setItem("vowel",    JSON.stringify(vowelObject));
+        this.consonateRatings.set(consonateObject);
+        this.vowelRatings.set(vowelObject);
     },
 
     changeTone: function(tone){
@@ -138,35 +205,38 @@ var app = {
     },
 
     render: function(){
-        var displayword = this.pinyinTable.consonate[this.consonate].words[this.vowel];
+        var displayword = pinyinTable.consonate[this.consonate].words[this.vowel];
         var soundword = displayword.replace("ü","v");
         var audiopath = this.rootPath+"sound/"+this.consonate.replace(" ","none")+"/"+this.vowel.replace("ü","v")+"/"+soundword+this.tone+".ogg";
 
         if(typeof this.wordAudio.release == "function")
             this.wordAudio.release();
 
-        this.wordAudio = new Media(audiopath, function(){
-            $("div.word > div.sound").removeClass("pulse");
-        }, function(error){
-            switch(error.code)
-            {
-                case MediaError.MEDIA_ERR_ABORTED:
-                    alert("Error playing audio: aborted");
-                break;
+        if(typeof Media != "undefined")
+        {
+            this.wordAudio = new Media(audiopath, function(){
+                $("div.word > div.sound").removeClass("pulse");
+            }, function(error){
+                switch(error.code)
+                {
+                    case MediaError.MEDIA_ERR_ABORTED:
+                        alert("Error playing audio: aborted");
+                    break;
 
-                case MediaError.MEDIA_ERR_NETWORK:
-                    alert("Error playing audio: network failure.");
-                break;
+                    case MediaError.MEDIA_ERR_NETWORK:
+                        alert("Error playing audio: network failure.");
+                    break;
 
-                case MediaError.MEDIA_ERR_DECODE:
-                    alert("Error playing audio: could not decode.");
-                break;
+                    case MediaError.MEDIA_ERR_DECODE:
+                        alert("Error playing audio: could not decode.");
+                    break;
 
-                case MediaError.MEDIA_ERR_NONE_SUPPORTED:
-                    alert("Error playing audio: no audio device found.");
-                break;
-            }
-        });
+                    case MediaError.MEDIA_ERR_NONE_SUPPORTED:
+                        alert("Error playing audio: no audio device found.");
+                    break;
+                }
+            });
+        }
 
         $("div.guide").html("");
         $("div.guide").css("opacity", 0);

@@ -1,4 +1,4 @@
-{
+var pinyinTable = {
     "consonate":{
         " ":{
             "guide":"no initial consonate sound",
@@ -461,7 +461,7 @@
             }
         },
         "j":{
-            "guide":"No equvalent in English.  Like a j sound, but with your tongue tip touching the back of your bottom teeth, and the middle of your tougue arching upwards.",
+            "guide":"Like a j sound, but with your tongue tip touching the back of your bottom teeth, and the middle of your tougue arching upwards.",
             "words":{
                 "i":"ji",
                 "ia":"jia",
@@ -480,7 +480,7 @@
             }
         },
         "q":{
-            "guide":"No equvalent in English.  Make a 'ch' sound, but with your tongue tip touching the back of your bottom teeth, and the middle of your tougue arching upwards.",
+            "guide":"Make a 'ch' sound, but with your tongue tip touching the back of your bottom teeth, and the middle of your tougue arching upwards.",
             "words":{
                 "i":"qi",
                 "ia":"qia",
@@ -499,7 +499,7 @@
             }
         },
         "x":{
-            "guide":"No equvalent in English.  Make a 'sh' sound, but with your tongue tip touching the back of your bottom teeth, and the middle of your tougue arching upwards.",
+            "guide":"Make a 'sh' sound, but with your tongue tip touching the back of your bottom teeth, and the middle of your tougue arching upwards.",
             "words":{
                 "i":"xi",
                 "ia":"xia",

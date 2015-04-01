@@ -108,7 +108,7 @@ div.word > div.sound
     opacity: 0.2;
 }
 
-@-webkit-keyframes example {
+@-webkit-keyframes fadePulse {
     0%   {opacity: 0.1;}
     50%  {opacity: 0.5;}
     100% {opacity: 0.1;}
@@ -116,9 +116,32 @@ div.word > div.sound
 
 .pulse
 {
-    -webkit-animation-name: example;
+    -webkit-animation-name: fadePulse;
     -webkit-animation-duration: 0.5s;
     -webkit-animation-iteration-count: infinite;
+}
+
+@-webkit-keyframes driftUp {
+    0%   {
+            opacity: 0;
+        }
+    10%  {
+            opacity: 1;
+        }
+    50%  {
+            top: -3.7em;
+        }
+    100% {
+            opacity: 0.0;
+            top: -6em;
+        }
+}
+.float
+{
+    -webkit-animation-name: driftUp;
+    -webkit-animation-duration: 1s;
+    -webkit-animation-iteration-count: 1;
+    -webkit-animation-timing-function: ease-in;
 }
 
 div.controls
@@ -132,6 +155,34 @@ div.controls label
 {
     color: white;
     font-size:0.8em;
+}
+
+div.controls div.ratemark
+{
+    position: absolute;
+    -webkit-transform: rotate(45deg);
+    background-color: white;
+    border: 0.1em solid darkorange;
+    width: 3em;
+    height: 3em;
+    top: -3.7em;
+    left: 0px;
+    border-radius: 2em;
+    border-bottom-right-radius: 0;
+    box-shadow: 0.2em 0.2em 0.2em rgba(0,0,0,0.4);
+    opacity: 0;
+}
+
+div.controls div.ratemark label
+{
+    position: relative;
+    display:block;
+    -webkit-transform: rotate(-45deg);
+    color: #666;
+    font-size: 1.5em;
+    text-align: center;
+    width: 2em;
+    line-height: 2em;
 }
 
 div.controls div.slide
